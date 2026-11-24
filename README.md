@@ -8,24 +8,9 @@
   <img src="https://img.shields.io/badge/Deploy-VPS%20%7C%20cPanel%20%7C%20Pterodactyl-orange" alt="Deploy Options" />
 </p>
 
-<p align="center">
-  <a href="https://t.me/ahmadzakiyo">
-    <img src="https://img.shields.io/badge/Telegram-Chat%20Owner-2CA5E0?logo=telegram&logoColor=white&style=for-the-badge" alt="Chat Owner" />
-  </a>
-  &nbsp;
-  <a href="https://t.me/nuxysproject">
-    <img src="https://img.shields.io/badge/Telegram-Channel%20Updates-2CA5E0?logo=telegram&logoColor=white&style=for-the-badge" alt="Channel" />
-  </a>
-</p>
-
 API Gateway self-hosted berbasis Node.js untuk otomatisasi cek transaksi dan cetak QRIS dinamis dari akun **GoPay / GoFood Merchant** kamu.
 
 ---
-
-> [!NOTE]
-> 💬 **HUBUNGI OWNER & BERGABUNG CHANNEL:**
-> - 👤 **Developer / Owner:** [@ahmadzakiyo](https://t.me/ahmadzakiyo)
-> - 📢 **Channel Update & Project:** [@nuxysproject](https://t.me/nuxysproject)
 
 > [!TIP]
 > 📣 **PENGUMUMAN & UPDATE TERBARU: Sistem Login OTP Terminal & Auto-Refresh Token**
@@ -432,34 +417,3 @@ gopay-gateway/
 ├── Dockerfile                        # Konfigurasi Docker
 └── docker-compose.yml                # Konfigurasi Docker Compose
 ```
-
----
-
-## 💬 Kontak & Komunitas
-
-Ada pertanyaan, error, atau mau diskusi? Hubungi langsung:
-
-<p align="center">
-  <a href="https://t.me/ahmadzakiyo">
-    <img src="https://img.shields.io/badge/Telegram-Chat%20Owner-2CA5E0?logo=telegram&logoColor=white&style=for-the-badge" alt="Chat Owner" />
-  </a>
-  &nbsp;
-  <a href="https://t.me/nuxysproject">
-    <img src="https://img.shields.io/badge/Telegram-Channel%20Updates-2CA5E0?logo=telegram&logoColor=white&style=for-the-badge" alt="Channel" />
-  </a>
-</p>
-
-- 👤 **Owner / Developer:** [@ahmadzakiyo](https://t.me/ahmadzakiyo)
-- 📢 **Channel (Update & Project):** [@nuxysproject](https://t.me/nuxysproject)
-
----
-
-## ☕ Dukung Project Ini
-
-Kalau project ini bermanfaat buat kamu, traktir saya kopi ya! ☕
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/ahmadzakiyox/DB/main/6269360055874426106_121.jpg" alt="QRIS Donasi ahmadzakiyo" width="250" />
-  <br/>
-  <sub>Nominal bebas — terima kasih banyak! 🙏</sub>
-</p>
