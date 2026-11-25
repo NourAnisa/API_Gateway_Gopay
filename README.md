@@ -43,9 +43,152 @@ API Gateway self-hosted berbasis Node.js untuk otomatisasi cek transaksi dan cet
 
 ## 💻 Persyaratan System
 
-- **VPS / Dedicated Server** dengan Linux (Ubuntu 20.04/22.04, Debian, AlmaLinux, dll) & Node.js ≥ 18.
+- **VPS / Dedicated Server / Komputer Lokal** dengan Node.js ≥ 18.
 - Akun GoBiz / GoFood Merchant aktif yang terdaftar dengan nomor HP.
 - QRIS statis dari aplikasi GoBiz (untuk fitur generate QRIS dinamis).
+
+---
+
+## 📖 Panduan Lengkap & Mudah Dipahami (Step-by-Step dari Nol)
+
+Panduan ini dibuat agar siapa saja—bahkan pemula sekalipun—dapat memasang dan menjalankan GoPay Gateway ini dengan mudah dan cepat.
+
+```
++------------------+         +-----------------------+         +-----------------------+
+|  Pembeli / Toko  | ------> |  GoPay Gateway Server | ------> |  GoBiz / GoPay System |
+|  Scan QRIS Dinamis|        |  (server.js di Port 3005)       |  (Verifikasi Otomatis)|
++------------------+         +-----------------------+         +-----------------------+
+```
+
+### 1. Download dan Pasang Program
+Buka Terminal (atau Git Bash / Command Prompt), lalu ketikkan perintah berikut:
+```bash
+# 1. Download kode program dari GitHub
+git clone https://github.com/NourAnisa/API_Gateway_Gopay.git
+
+# 2. Masuk ke foldernya
+cd API_Gateway_Gopay
+
+# 3. Pasang semua modul library yang dibutuhkan
+npm install
+```
+
+---
+
+### 2. Pengaturan File `.env`
+Salin template konfigurasi `.env.example` menjadi `.env`:
+```bash
+cp .env.example .env
+```
+Buka file `.env` dengan text editor (seperti `nano .env` atau VS Code) dan sesuaikan nilainya:
+```env
+PORT=3005
+API_KEY=rahasia123
+QRIS_STATIC=00020101021126600016ID.CO.GOPAY.WWW...
+GOPAY_MERCHANT_ID=
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_ADMIN_CHAT_ID=
+```
+
+**Penjelasan Variabel:**
+- `PORT` : Port server aplikasi berjalan (default: `3005`).
+- `API_KEY` : Password rahasia buatan kamu sendiri untuk mengamankan API agar tidak sembarang orang bisa mengaksesnya.
+- `QRIS_STATIC` : Kode teks QRIS toko kamu dari aplikasi GoBiz (lihat tips cara mengambilnya di bawah).
+- `TELEGRAM_*` : *(Opsional)* Isi jika kamu ingin notifikasi otomatis dikirim ke bot Telegram saat ada uang masuk.
+
+> [!TIP]
+> **Cara Mudah Mengambil Kode `QRIS_STATIC` dari Toko Kamu:**
+> 1. Buka aplikasi **GoBiz** di HP kamu, lalu masuk ke menu **QRIS Toko**.
+> 2. Download / Screenshot gambar QRIS toko kamu.
+> 3. Scan gambar tersebut menggunakan aplikasi QR Code Scanner di HP atau upload gambarnya ke web pembaca QR (seperti https://zxing.org/w/decode).
+> 4. Salin teks panjang hasil scan yang berawalan `00020101...` dan tempelkan ke variabel `QRIS_STATIC` di file `.env`.
+
+---
+
+### 3. Login Akun GoBiz Terminal (Hanya 1 Kali Saja)
+Jalankan perintah ini di terminal:
+```bash
+node login.js
+```
+- Masukkan nomor HP GoBiz kamu (contoh: `085119772671`).
+- Buka SMS atau WhatsApp di HP kamu untuk melihat 4 digit kode OTP dari Gojek.
+- Masukkan kode OTP tersebut di terminal.
+- Selesai! Sesi login kamu akan tersimpan di file `.GOPAY_SESI_JANGAN_DIHAPUS.json`.
+
+> [!NOTE]
+> Sistem ini sudah dilengkapi **Auto-Refresh Token**. Server akan otomatis memperbarui token setiap 6 jam sekali di background, sehingga kamu **tidak perlu login ulang setiap hari**. Cukup login 1 kali di awal!
+
+---
+
+### 4. Menjalankan Server Gateway
+
+#### A. Untuk Uji Coba Cepat (Testing)
+```bash
+npm start
+```
+Jika muncul pesan `Gateway running on port 3005`, server sudah aktif dan siap menerima request!
+
+#### B. Untuk Berjalan 24 Jam Non-Stop di VPS (Production)
+Gunakan process manager **PM2** agar server tetap menyala terus meski terminal ditutup atau VPS di-restart:
+```bash
+# Pasang PM2 global
+sudo npm install -g pm2
+
+# Jalankan gateway
+pm2 start server.js --name "gopay-gateway"
+
+# Kunci agar otomatis start saat VPS booting
+pm2 save
+pm2 startup
+```
+
+---
+
+### 5. Cara Menggunakan API (Contoh Pemakaian)
+
+#### A. Membuat Pembayaran QRIS Baru
+Panggil endpoint ini melalui URL browser atau backend website kamu:
+```http
+GET http://IP_SERVER:3005/create-qris?amount=25000&api_key=rahasia123
+```
+**Hasil Balasan (JSON):**
+```json
+{
+  "success": true,
+  "data": {
+    "qris_id": "ab7x9q",
+    "trx_id": "TRX-8H2K9P",
+    "qris_url": "http://IP_SERVER:3005/qr/ab7x9q",
+    "qris_code": "00020101021226...",
+    "amount": 25000,
+    "expires_at": "2026-11-25T05:35:00.000Z",
+    "expires_in": "5 menit"
+  }
+}
+```
+
+#### B. Menampilkan Halaman Checkout ke Pembeli
+Cukup berikan link `qris_url` yang didapat kepada pembeli:
+```
+http://IP_SERVER:3005/qr/ab7x9q
+```
+Halaman ini sudah otomatis menampilkan:
+- Gambar QRIS dinamis siap scan dari semua e-wallet / mobile banking (GoPay, BCA, Mandiri, OVO, Dana, dll)
+- Hitung mundur batas waktu pembayaran (5 menit)
+- Tombol cek manual interaktif dan status yang otomatis berubah jadi **LUNAS** begitu pembayaran diterima
+
+#### C. Cek Status Pembayaran (Tanpa API Key — Aman untuk Frontend)
+```http
+GET http://IP_SERVER:3005/api/qr-status/ab7x9q
+```
+Respon jika sudah dibayar: `{"success": true, "paid": true, "status": "PAID"}`.
+
+#### D. Cek Riwayat Mutasi Transaksi Masuk
+```http
+GET http://IP_SERVER:3005/transactions/all?limit=10&api_key=rahasia123
+```
+
+---
 
 ---
 
