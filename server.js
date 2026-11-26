@@ -550,14 +550,20 @@ app.get('/transactions', apiKeyAuth, async (req, res) => {
         }
 
         const rawTransactions = response.data?.transactions || response.data?.data?.transactions || [];
-        const formattedTransactions = rawTransactions.map(tx => ({
-            amount: parseInt(tx.gross_amount || tx.real_gross_amount || 0, 10),
-            status: tx.transaction_status ? tx.transaction_status.toLowerCase() : 'success',
-            time: tx.transaction_time || tx.settlement_time,
-            issuer: tx.qris_provider_aspi_issuer || 'GoPay / Bank',
-            order_id: tx.order_id,
-            transaction_id: tx.id
-        }));
+        const formattedTransactions = rawTransactions.map(tx => {
+            const rawAmt = parseInt(tx.gross_amount || tx.real_gross_amount || 0, 10);
+            const rupiahAmt = (tx.gross_amount !== undefined || tx.real_gross_amount !== undefined)
+                ? Math.round(rawAmt / 100)
+                : rawAmt;
+            return {
+                amount: rupiahAmt,
+                status: tx.transaction_status ? tx.transaction_status.toLowerCase() : 'success',
+                time: tx.transaction_time || tx.settlement_time,
+                issuer: tx.qris_provider_aspi_issuer || 'GoPay / Bank',
+                order_id: tx.order_id,
+                transaction_id: tx.id
+            };
+        });
 
         res.json({
             success: true,
@@ -640,23 +646,25 @@ async function verifyPayment(amount, startTime, merchantIdOverride = null, userA
 
         if (isAmountMatched && txTimestamp >= filterStartTimeMs) {
             const existingClaim = claimedTransactions.get(txId);
+            const actualAmount = (txAmount !== targetAmount && Math.round(txAmount / 100) === targetAmount)
+                ? Math.round(txAmount / 100)
+                : txAmount;
 
             if (!existingClaim || !existingClaim.qrisId) {
                 // Transaksi belum diklaim siapapun → klaim sekarang
                 claimedTransactions.set(txId, { qrisId, claimedAt: Date.now() });
                 sendTelegramAlert(
-                    `💰 <b>DANA MASUK TERVERIFIKASI (GoPay Dynamic QRIS)!</b>\n\n` +
-                    `🏪 <b>Merchant:</b> Bit & Bean\n` +
-                    `💵 <b>Nominal:</b> Rp ${txAmount.toLocaleString('id-ID')}\n` +
-                    `🏦 <b>Metode:</b> ${tx.qris_provider_aspi_issuer || tx.payment_type || 'QRIS'}\n` +
-                    `🆔 <b>ID Transaksi:</b> <code>${txId}</code>\n` +
-                    `⚡ <i>Pesanan telah otomatis diproses dan aktif.</i>`
+                    `💰 <b>Uang Masuk (GoPay QRIS) — Bit &amp; Bean</b>\n\n` +
+                    `• Nominal: <b>Rp ${actualAmount.toLocaleString('id-ID')}</b>\n` +
+                    `• Dari: ${tx.qris_provider_aspi_issuer || tx.payment_type || 'QRIS'}\n` +
+                    `• ID Transaksi: <code>${txId}</code>\n` +
+                    `Status: Lunas &amp; otomatis aktif.`
                 );
-                logActivity('INFO', `TRX ${txId} diklaim oleh QRIS ${qrisId || 'manual-check'}`);
+                logActivity('INFO', `TRX ${txId} (Rp ${actualAmount}) diklaim oleh QRIS ${qrisId || 'manual-check'}`);
                 return {
                     transaction_id: txId,
                     order_id: tx.order_id,
-                    amount: (txAmount === targetAmount * 100 ? Math.round(txAmount / 100) : txAmount),
+                    amount: actualAmount,
                     payer_issuer: tx.qris_provider_aspi_issuer || 'GoPay / Bank',
                     payment_type: tx.payment_type || tx.transaction_source || 'GOPAY_INSTORE',
                     transaction_time: tx.transaction_time || tx.settlement_time
@@ -666,7 +674,7 @@ async function verifyPayment(amount, startTime, merchantIdOverride = null, userA
                 return {
                     transaction_id: txId,
                     order_id: tx.order_id,
-                    amount: (txAmount === targetAmount * 100 ? Math.round(txAmount / 100) : txAmount),
+                    amount: actualAmount,
                     payer_issuer: tx.qris_provider_aspi_issuer || 'GoPay / Bank',
                     payment_type: tx.payment_type || tx.transaction_source || 'GOPAY_INSTORE',
                     transaction_time: tx.transaction_time || tx.settlement_time
